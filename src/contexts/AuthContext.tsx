@@ -3,11 +3,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useTheme } from './ThemeContext';
 
 interface User {
   id: number;
   name: string;
   email: string;
+  themeSelected?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -18,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   accessToken: string | null;
   login: (userData: User, tokens?: { access_token: string; refresh_token: string; expires_in: number }) => void;
+  updateUser: (userData: Partial<User>) => void;
   logout: () => void;
   checkAuth: () => void;
   refreshToken: () => Promise<void>;
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { setTheme } = useTheme();
   
   const [accessToken, setAccessToken, , isAccessTokenLoaded] = useLocalStorage<string | null>('access_token', null);
   const [storedRefreshToken, setStoredRefreshToken, , isRefreshTokenLoaded] = useLocalStorage<string | null>('refresh_token', null);
@@ -38,11 +42,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     
+    // Aplicar tema do usuário
+    if (userData.themeSelected) {
+      setTheme(userData.themeSelected as 'light' | 'dark');
+    }
+    
     // Salva os tokens se fornecidos
     if (tokens) {
       setAccessToken(tokens.access_token);
       setStoredRefreshToken(tokens.refresh_token);
       setTokenExpires((Date.now() + (tokens.expires_in * 1000)).toString());
+    }
+  };
+
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Sincronizar tema se foi alterado
+      if (userData.themeSelected) {
+        setTheme(userData.themeSelected as 'light' | 'dark');
+      }
     }
   };
 
@@ -96,7 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser && accessToken && tokenExpires) {
       const expiresAt = parseInt(tokenExpires);
       if (Date.now() < expiresAt) {
-        setUser(JSON.parse(storedUser));
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        
+        // Aplicar tema salvo
+        if (userData.themeSelected) {
+          setTheme(userData.themeSelected as 'light' | 'dark');
+        }
       } else {
         refreshToken();
       }
@@ -119,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || !isAccessTokenLoaded || !isRefreshTokenLoaded || !isTokenExpiresLoaded,
     accessToken,
     login,
+    updateUser,
     logout,
     checkAuth,
     refreshToken,
