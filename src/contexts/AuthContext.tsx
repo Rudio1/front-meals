@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const refreshToken = useCallback(async () => {
+  const refreshToken = async () => {
     if (!storedRefreshToken) {
       logout();
       return;
@@ -87,9 +87,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Erro ao renovar token:', error);
       logout();
     }
-  }, [storedRefreshToken, setAccessToken, setStoredRefreshToken, setTokenExpires, logout]);
+  };
 
-  const checkAuth = useCallback(() => {
+  const checkAuth = () => {
     const storedUser = localStorage.getItem('user');
     
     if (storedUser && accessToken && tokenExpires) {
@@ -103,11 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     }
     setIsLoading(false);
-  }, [accessToken, tokenExpires, refreshToken]);
+  };
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+  }, [accessToken, tokenExpires]);
 
   const value = {
     user,

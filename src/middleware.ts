@@ -2,19 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const publicRoutes = ['/login', '/', '/api/auth/login'];
-  
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-  
-  const authCookie = request.cookies.get('auth-token');
-  
-  if (!authCookie && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
   return NextResponse.next();
 }
 

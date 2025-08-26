@@ -19,6 +19,19 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      const timer = setTimeout(() => {
+        router.push('/dashboard');
+        setShouldRedirect(false);
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [shouldRedirect, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -36,7 +49,7 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         login(data.user, data.tokens);
-        router.push('/dashboard');
+        setShouldRedirect(true);
       } else {
         setError('oi Gata, parece que você errou sua senha ou seu e-mail ein...! Ta com a cabeça na nuvem?');
       }
