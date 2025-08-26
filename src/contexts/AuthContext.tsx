@@ -8,8 +8,8 @@ interface User {
   id: number;
   name: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
@@ -30,9 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   
-  const [accessToken, setAccessToken] = useLocalStorage<string | null>('access_token', null);
-  const [storedRefreshToken, setStoredRefreshToken] = useLocalStorage<string | null>('refresh_token', null);
-  const [tokenExpires, setTokenExpires] = useLocalStorage<string | null>('token_expires', null);
+  const [accessToken, setAccessToken, , isAccessTokenLoaded] = useLocalStorage<string | null>('access_token', null);
+  const [storedRefreshToken, setStoredRefreshToken, , isRefreshTokenLoaded] = useLocalStorage<string | null>('refresh_token', null);
+  const [tokenExpires, setTokenExpires, , isTokenExpiresLoaded] = useLocalStorage<string | null>('token_expires', null);
 
   const login = (userData: User, tokens?: { access_token: string; refresh_token: string; expires_in: number }) => {
     setUser(userData);
@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const checkAuth = () => {
+
     const storedUser = localStorage.getItem('user');
     
     if (storedUser && accessToken && tokenExpires) {
@@ -106,13 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    checkAuth();
-  }, [accessToken, tokenExpires]);
+    // Só executa checkAuth quando todos os valores do localStorage foram carregados
+    if (isAccessTokenLoaded && isRefreshTokenLoaded && isTokenExpiresLoaded) {
+      checkAuth();
+    }
+  }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires]);
 
   const value = {
     user,
     isAuthenticated: !!user,
-    isLoading,
+    isLoading: isLoading || !isAccessTokenLoaded || !isRefreshTokenLoaded || !isTokenExpiresLoaded,
     accessToken,
     login,
     logout,
