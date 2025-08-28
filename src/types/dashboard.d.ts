@@ -1,4 +1,5 @@
 export interface Refeicao {
+  Id: number;
   Usuario: string;
   Refeicao: string;
   Data: string;

@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { DashboardData, Refeicao, UsuarioRefeicoes } from '@/types/dashboard';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function DashboardPage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -30,19 +32,18 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error('vish, parece que deu erro aqui minha gata. Me chama no zap pra eu dar uma olhada');
       }
-
       const data: DashboardData = await response.json();
       setDashboardData(data);
       if (data.data.length > 0 && !activeTab) {
         const primeiroUsuario = data.data[0].Usuario;
         setActiveTab(primeiroUsuario);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } catch {
+      setError('Erro de conexão ao carregar dados');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab]);
 
   const fetchFilteredData = async (date: string) => {
     try {
@@ -84,8 +85,6 @@ export default function DashboardPage() {
 
   const organizarPorUsuario = (): UsuarioRefeicoes[] => {
     if (!dashboardData) return [];
-
-    // Agrupa por usuário e depois por refeição
     const usuariosMap = new Map<string, Map<string, Refeicao[]>>();
 
     dashboardData.data.forEach(item => {
@@ -132,9 +131,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   const usuarios = organizarPorUsuario();
+
+  const refeicaoPertenceAoUsuario = (refeicao: Refeicao) => {
+    return user && refeicao.Usuario === user.name;
+  };
 
   return (
     <ProtectedRoute>
@@ -155,6 +158,17 @@ export default function DashboardPage() {
                       : `Refeições registradas`
                     }
                   </p>
+                </div>
+
+                {/* Botão para Nova Refeição */}
+                <div className="mt-4 sm:mt-0">
+                  <button
+                    onClick={() => router.push('/dashboard/refeicoes')}
+                    className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="mr-2">➕</span>
+                    Nova Refeição
+                  </button>
                 </div>
               </div>
             </div>
@@ -301,15 +315,15 @@ export default function DashboardPage() {
                               key={usuario.nome}
                               onClick={() => setActiveTab(usuario.nome)}
                               className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap ${activeTab === usuario.nome
-                                  ? 'bg-primary text-primary-foreground shadow-md'
-                                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+                                ? 'bg-primary text-primary-foreground shadow-md'
+                                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
                                 }`}
                             >
                               <div className="flex items-center space-x-2">
                                 <span className="font-medium">{usuario.nome}</span>
                                 <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === usuario.nome
-                                    ? 'bg-primary-foreground/20 text-primary-foreground'
-                                    : 'bg-primary/20 text-primary'
+                                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                                  : 'bg-primary/20 text-primary'
                                   }`}>
                                   {usuario.total}
                                 </span>
@@ -327,9 +341,6 @@ export default function DashboardPage() {
                           <h3 className="text-lg font-semibold text-card-foreground mb-2">
                             Refeições de {activeTab}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {getUsuarioAtivo()?.total} refei{getUsuarioAtivo()?.total !== 1 ? 'ções' : 'ção'} encontrada{getUsuarioAtivo()?.total !== 1 ? 's' : ''}
-                          </p>
                         </div>
 
                         {/* Agrupa as refeições por nome, data e tipo */}
@@ -384,6 +395,22 @@ export default function DashboardPage() {
                                             {primeiroItem.Data}
                                           </p>
                                         </div>
+
+                                        {/* Botão de Edição Mobile - Apenas para refeições do usuário logado */}
+                                        {refeicaoPertenceAoUsuario(primeiroItem) && (
+                                          <div className="flex-shrink-0 ml-3">
+                                            <button
+                                              onClick={() => {
+                                                const refeicaoId = primeiroItem.Id;
+                                                router.push(`/dashboard/refeicoes/${refeicaoId}/edit`);
+                                              }}
+                                              className="inline-flex items-center px-3 py-1 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                                              title="Editar refeição"
+                                            >
+                                              Editar
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
 
                                       <div className="space-y-2">
@@ -422,6 +449,9 @@ export default function DashboardPage() {
                                       </th>
                                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Itens
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Ações
                                       </th>
                                     </tr>
                                   </thead>
@@ -469,6 +499,21 @@ export default function DashboardPage() {
                                                 </div>
                                               ))}
                                             </div>
+                                          </td>
+                                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            {/* Botão de Edição Desktop - Apenas para refeições do usuário logado */}
+                                            {refeicaoPertenceAoUsuario(primeiroItem) && (
+                                              <button
+                                                onClick={() => {
+                                                  const refeicaoId = primeiroItem.Id;
+                                                  router.push(`/dashboard/refeicoes/${refeicaoId}/edit`);
+                                                }}
+                                                className="inline-flex items-center px-3 py-1 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                                                title="Editar refeição"
+                                              >
+                                                Editar
+                                              </button>
+                                            )}
                                           </td>
                                         </tr>
                                       );

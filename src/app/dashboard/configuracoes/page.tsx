@@ -86,11 +86,9 @@ export default function ConfiguracoesPage() {
                     text: errorData.error || 'Erro ao atualizar configurações'
                 });
             }
-        } catch (error) {
-            setMessage({
-                type: 'error',
-                text: 'Erro de conexão. Tente novamente.'
-            });
+        } catch (err) {
+            console.error('Erro ao atualizar usuário:', err);
+            setMessage({ type: 'error', text: 'Erro ao atualizar usuário' });
         } finally {
             setIsLoading(false);
         }

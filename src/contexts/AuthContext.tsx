@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Erro ao renovar token:', error);
       logout();
     }
-  }, [storedRefreshToken]);
+  }, [storedRefreshToken, logout]);
 
 
 
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(userData);
           
           if (userData.themeSelected) {
-            setTheme(userData.themeSelected as 'light' | 'dark' | 'rosa');
+            setThemeRef.current(userData.themeSelected as 'light' | 'dark' | 'rosa');
           }
         } else {
           refreshToken();
@@ -141,6 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires, refreshToken]);
+
+  useEffect(() => {
+    if (user) {
+      setThemeRef.current(user.themeSelected || 'light');
+    }
+  }, [user]);
 
   const value = {
     user,
