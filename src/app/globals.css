@@ -46,25 +46,25 @@
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #171717;
-  --card-foreground: #ededed;
-  --popover: #171717;
-  --popover-foreground: #ededed;
-  --primary: #6366f1;
+  --background: #121212; 
+  --foreground: #e4e4e7; 
+  --card: #1c1c1c; 
+  --card-foreground: #e4e4e7;
+  --popover: #1c1c1c;
+  --popover-foreground: #e4e4e7;
+  --primary: #818cf8; 
   --primary-foreground: #ffffff;
-  --secondary: #262626;
-  --secondary-foreground: #d4d4d4;
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #d4d4d4;
+  --secondary: #2a2a2a; 
+  --secondary-foreground: #d4d4d8;
+  --muted: #2a2a2a;
+  --muted-foreground: #f8f8f8; 
+  --accent: #2a2a2a;
+  --accent-foreground: #d4d4d8;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #ffffff;
-  --input: #171717;
-  --ring: #6366f1;
+  --border: #27272a; 
+  --input: #1c1c1c;
+  --ring: #818cf8;
 }
 
 .rosa {
@@ -117,4 +117,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-montserrat), Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Esconder barra de rolagem para abas mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Melhorar scroll horizontal para abas */
+.overflow-x-auto {
+  scroll-behavior: smooth;
 }

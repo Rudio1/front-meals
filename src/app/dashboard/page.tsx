@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [isFiltering, setIsFiltering] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('');
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -32,6 +33,10 @@ export default function DashboardPage() {
 
       const data: DashboardData = await response.json();
       setDashboardData(data);
+      if (data.data.length > 0 && !activeTab) {
+        const primeiroUsuario = data.data[0].Usuario;
+        setActiveTab(primeiroUsuario);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -51,6 +56,11 @@ export default function DashboardPage() {
 
       const data: DashboardData = await response.json();
       setDashboardData(data);
+
+      if (data.data.length > 0 && !activeTab) {
+        const primeiroUsuario = data.data[0].Usuario;
+        setActiveTab(primeiroUsuario);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -116,11 +126,15 @@ export default function DashboardPage() {
     return refeicoesUnicas.size;
   };
 
+  const getUsuarioAtivo = () => {
+    return organizarPorUsuario().find(u => u.nome === activeTab);
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-
+  const usuarios = organizarPorUsuario();
 
   return (
     <ProtectedRoute>
@@ -198,6 +212,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
+                  {/* Filtro por Data */}
                   <div
                     className="bg-card rounded-lg shadow p-4 sm:p-6 border border-border cursor-pointer sm:cursor-default"
                     onClick={(e) => {
@@ -252,183 +267,222 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-lg">📅</span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-500">Hoje</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {dashboardData.data.filter(r => {
-                            const hoje = new Date();
-                            const dataRefeicao = new Date(r.Data);
-                            return dataRefeicao.toDateString() === hoje.toDateString();
-                          }).length}
-                        </p>
-                      </div>
-                    </div>
-                  </div> */}
                 </div>
 
-                {/* Tabelas por Usuário */}
-                <div className="space-y-6">
-                  {organizarPorUsuario().map((usuario) => {
-                    // Agrupa as refeições por nome, data e tipo
-                    const refeicoesAgrupadas = new Map<string, Refeicao[]>();
+                {/* Sistema de Abas */}
+                {usuarios.length > 0 && (
+                  <div className="bg-card rounded-lg shadow border border-border">
+                    {/* Abas - Desktop */}
+                    <div className="hidden sm:block border-b border-border">
+                      <nav className="flex space-x-8 px-6" aria-label="Tabs">
+                        {usuarios.map((usuario) => (
+                          <button
+                            key={usuario.nome}
+                            onClick={() => setActiveTab(usuario.nome)}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === usuario.nome
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                              }`}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span>{usuario.nome}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </nav>
+                    </div>
 
-                    usuario.refeicoes.forEach(item => {
-                      const chave = `${item.Refeicao}-${item.Data}-${item.Tipo}`;
-                      if (!refeicoesAgrupadas.has(chave)) {
-                        refeicoesAgrupadas.set(chave, []);
-                      }
-                      refeicoesAgrupadas.get(chave)!.push(item);
-                    });
-
-                    return (
-                      <div key={usuario.nome} className="bg-card rounded-lg shadow border border-border">
-                        <div className="px-6 py-4 border-b border-border">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-card-foreground">{usuario.nome}</h3>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                              {refeicoesAgrupadas.size} refei{refeicoesAgrupadas.size !== 1 ? 'ções' : 'ção'}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Mobile View - Cards */}
-                        <div className="block sm:hidden space-y-4">
-                          {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
-                            const primeiroItem = itens[0];
-                            return (
-                              <div key={index} className="bg-card border border-border rounded-lg p-4 space-y-3">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-semibold text-card-foreground mb-2 line-clamp-2">
-                                      {primeiroItem.Refeicao}
-                                    </h4>
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
-                                        primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
-                                          primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
-                                            primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                                              primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
-                                                primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
-                                                  primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
-                                                    'bg-gray-500/10 text-gray-700 dark:text-gray-300'
-                                        }`}>
-                                        {primeiroItem.Tipo === 'Café da manhã' ? '☀️ Café da manhã' :
-                                          primeiroItem.Tipo === 'Lanche da manhã' ? '🌅 Lanche da manhã' :
-                                            primeiroItem.Tipo === 'Almoço' ? '🌞 Almoço' :
-                                              primeiroItem.Tipo === 'Lanche da tarde' ? '🌤️ Lanche da tarde' :
-                                                primeiroItem.Tipo === 'Jantar' ? '🌙 Jantar' :
-                                                  primeiroItem.Tipo === 'Ceia' ? '🍰 Ceia' :
-                                                    primeiroItem.Tipo === 'Snack (Lanche rápido)' ? '🍿 Snack (Lanche rápido)' :
-                                                      primeiroItem.Tipo}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mb-3">
-                                      {primeiroItem.Data}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Itens da Refeição:
-                                  </p>
-                                  {itens.map((item, itemIndex) => (
-                                    <div key={itemIndex} className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
-                                      <span className="text-sm font-medium text-card-foreground flex-1">
-                                        {item.NomeItem}
-                                      </span>
-                                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded ml-2">
-                                        {item.Quantidade} {item.Medida}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
+                    {/* Abas - Mobile */}
+                    <div className="sm:hidden border-b border-border">
+                      <div className="px-4 py-3">
+                        <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                          {usuarios.map((usuario) => (
+                            <button
+                              key={usuario.nome}
+                              onClick={() => setActiveTab(usuario.nome)}
+                              className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap ${activeTab === usuario.nome
+                                  ? 'bg-primary text-primary-foreground shadow-md'
+                                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+                                }`}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{usuario.nome}</span>
+                                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === usuario.nome
+                                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                                    : 'bg-primary/20 text-primary'
+                                  }`}>
+                                  {usuario.total}
+                                </span>
                               </div>
-                            );
-                          })}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Conteúdo da Aba Ativa */}
+                    {activeTab && getUsuarioAtivo() && (
+                      <div className="p-6">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                            Refeições de {activeTab}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {getUsuarioAtivo()?.total} refei{getUsuarioAtivo()?.total !== 1 ? 'ções' : 'ção'} encontrada{getUsuarioAtivo()?.total !== 1 ? 's' : ''}
+                          </p>
                         </div>
 
-                        {/* Desktop View - Table */}
-                        <div className="hidden sm:block overflow-x-auto">
-                          <table className="min-w-full divide-y divide-border">
-                            <thead className="bg-muted">
-                              <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Refeição
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Tipo
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Data
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Itens
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-card divide-y divide-border">
-                              {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
-                                const primeiroItem = itens[0];
-                                return (
-                                  <tr key={index} className="hover:bg-accent">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-card-foreground">
-                                      {primeiroItem.Refeicao}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
-                                        primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
-                                          primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
-                                            primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                                              primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
-                                                primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
-                                                  primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
-                                                    'bg-gray-500/10 text-gray-700 dark:text-gray-300'
-                                        }`}>
-                                        {primeiroItem.Tipo === 'Café da manhã' ? 'Café da manhã' :
-                                          primeiroItem.Tipo === 'Lanche da manhã' ? 'Lanche da manhã' :
-                                            primeiroItem.Tipo === 'Almoço' ? 'Almoço' :
-                                              primeiroItem.Tipo === 'Lanche da tarde' ? 'Lanche da tarde' :
-                                                primeiroItem.Tipo === 'Jantar' ? 'Jantar' :
-                                                  primeiroItem.Tipo === 'Ceia' ? 'Ceia' :
-                                                    primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'Snack (Lanche rápido)' :
-                                                      primeiroItem.Tipo}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                      {primeiroItem.Data}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                                      <div className="space-y-1">
+                        {/* Agrupa as refeições por nome, data e tipo */}
+                        {(() => {
+                          const usuario = getUsuarioAtivo();
+                          if (!usuario) return null;
+
+                          const refeicoesAgrupadas = new Map<string, Refeicao[]>();
+
+                          usuario.refeicoes.forEach(item => {
+                            const chave = `${item.Refeicao}-${item.Data}-${item.Tipo}`;
+                            if (!refeicoesAgrupadas.has(chave)) {
+                              refeicoesAgrupadas.set(chave, []);
+                            }
+                            refeicoesAgrupadas.get(chave)!.push(item);
+                          });
+
+                          return (
+                            <div className="space-y-4">
+                              {/* Mobile View - Cards */}
+                              <div className="block sm:hidden space-y-4">
+                                {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
+                                  const primeiroItem = itens[0];
+                                  return (
+                                    <div key={index} className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="text-sm font-semibold text-card-foreground mb-2 line-clamp-2">
+                                            {primeiroItem.Refeicao}
+                                          </h4>
+                                          <div className="flex items-center space-x-2 mb-2">
+                                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
+                                              primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
+                                                primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
+                                                  primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
+                                                    primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
+                                                      primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
+                                                        primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
+                                                          'bg-gray-500/10 text-gray-700 dark:text-gray-300'
+                                              }`}>
+                                              {primeiroItem.Tipo === 'Café da manhã' ? '☀️ Café da manhã' :
+                                                primeiroItem.Tipo === 'Lanche da manhã' ? '🌅 Lanche da manhã' :
+                                                  primeiroItem.Tipo === 'Almoço' ? '🌞 Almoço' :
+                                                    primeiroItem.Tipo === 'Lanche da tarde' ? '🌤️ Lanche da tarde' :
+                                                      primeiroItem.Tipo === 'Jantar' ? '🌙 Jantar' :
+                                                        primeiroItem.Tipo === 'Ceia' ? '🍰 Ceia' :
+                                                          primeiroItem.Tipo === 'Snack (Lanche rápido)' ? '🍿 Snack (Lanche rápido)' :
+                                                            primeiroItem.Tipo}
+                                            </span>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground mb-3">
+                                            {primeiroItem.Data}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                          Itens da Refeição:
+                                        </p>
                                         {itens.map((item, itemIndex) => (
-                                          <div key={itemIndex} className="flex items-center space-x-2">
-                                            <span className="font-medium text-card-foreground">
+                                          <div key={itemIndex} className="flex items-center justify-between bg-background rounded-lg p-2">
+                                            <span className="text-sm font-medium text-card-foreground flex-1">
                                               {item.NomeItem}
                                             </span>
-                                            <span className="text-xs bg-muted px-2 py-1 rounded">
+                                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded ml-2">
                                               {item.Quantidade} {item.Medida}
                                             </span>
                                           </div>
                                         ))}
                                       </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Desktop View - Table */}
+                              <div className="hidden sm:block overflow-x-auto">
+                                <table className="min-w-full divide-y divide-border">
+                                  <thead className="bg-muted">
+                                    <tr>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Refeição
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Tipo
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Data
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Itens
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-card divide-y divide-border">
+                                    {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
+                                      const primeiroItem = itens[0];
+                                      return (
+                                        <tr key={index} className="hover:bg-accent">
+                                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-card-foreground">
+                                            {primeiroItem.Refeicao}
+                                          </td>
+                                          <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
+                                              primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
+                                                primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
+                                                  primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
+                                                    primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
+                                                      primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
+                                                        primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
+                                                          'bg-gray-500/10 text-gray-700 dark:text-gray-300'
+                                              }`}>
+                                              {primeiroItem.Tipo === 'Café da manhã' ? 'Café da manhã' :
+                                                primeiroItem.Tipo === 'Lanche da manhã' ? 'Lanche da manhã' :
+                                                  primeiroItem.Tipo === 'Almoço' ? 'Almoço' :
+                                                    primeiroItem.Tipo === 'Lanche da tarde' ? 'Lanche da tarde' :
+                                                      primeiroItem.Tipo === 'Jantar' ? 'Jantar' :
+                                                        primeiroItem.Tipo === 'Ceia' ? 'Ceia' :
+                                                          primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'Snack (Lanche rápido)' :
+                                                            primeiroItem.Tipo}
+                                            </span>
+                                          </td>
+                                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                            {primeiroItem.Data}
+                                          </td>
+                                          <td className="px-6 py-4 text-sm text-muted-foreground">
+                                            <div className="space-y-1">
+                                              {itens.map((item, itemIndex) => (
+                                                <div key={itemIndex} className="flex items-center space-x-2">
+                                                  <span className="font-medium text-card-foreground">
+                                                    {item.NomeItem}
+                                                  </span>
+                                                  <span className="text-xs bg-muted px-2 py-1 rounded">
+                                                    {item.Quantidade} {item.Medida}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
