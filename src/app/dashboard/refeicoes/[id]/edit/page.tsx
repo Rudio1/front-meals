@@ -3,27 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useRouter, useParams } from 'next/navigation';
-import { MealFormData, MealItem, MealType, Unit } from '@/types/meals';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
+import { useRouter, useParams } from 'next/navigation';
+import { MealItem, MealFormData, MealType, Unit } from '@/types/meals';
+import { DashboardData, Refeicao } from '@/types/dashboard';
 
-interface MealData {
-  message: string;
-  total_items: number;
-  data: Array<{
-    Id: number;
-    Usuario: string;
-    Refeicao: string;
-    Data: string;
-    Tipo: string;
-    NomeItem: string;
-    Quantidade: number;
-    Medida: string;
-  }>;
-}
-
-export default function EditMealPage() {
+export default function EditarRefeicaoPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -36,7 +22,6 @@ export default function EditMealPage() {
   
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
-
   
   const [formData, setFormData] = useState<MealFormData>({
     user_id: user?.id || 0,
@@ -90,7 +75,8 @@ export default function EditMealPage() {
         const response = await fetch(`/api/meals/${mealId}`);
         
         if (response.ok) {
-          const mealData: MealData = await response.json();
+          const mealData: DashboardData = await response.json();
+          
           // Processar dados da API para o formato do formulário
           const primeiroItem = mealData.data[0];
           if (primeiroItem) {
@@ -116,7 +102,7 @@ export default function EditMealPage() {
             }
             
             // Mapear unidades pelos nomes
-            const itemsComUnidades = mealData.data.map(item => {
+            const itemsComUnidades = mealData.data.map((item: Refeicao) => {
               const unidade = units.find(unit => 
                 unit.name === item.Medida
               );
@@ -269,51 +255,54 @@ export default function EditMealPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-3xl font-bold text-foreground mb-2">Editar Refeição</h2>
-                  <p className="text-muted-foreground">Atualize os dados da sua refeição</p>
+                  <p className="text-muted-foreground">
+                    Atualize os dados da sua refeição
+                  </p>
                 </div>
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors duration-200"
                 >
-                  Voltar ao Dashboard
+                  ← Voltar ao Dashboard
                 </button>
               </div>
             </div>
 
             {/* Formulário */}
-            <div className="bg-card shadow rounded-lg border border-border">
-              <div className="px-6 py-4 border-b border-border">
-                <h3 className="text-lg font-medium text-card-foreground">Dados da Refeição</h3>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Informações Básicas */}
+              <div className="bg-card rounded-lg shadow p-6 border border-border">
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
+                  Descrição da Refeição
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Descrição da Refeição */}
+                  <div className="md:col-span-2">
+                    <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+                      Descrição da Refeição *
+                    </label>
+                    <textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Ex: Panqueca de carne moída"
+                      required
+                    />
+                  </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Descrição */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                    Descrição da Refeição
-                  </label>
-                  <input
-                    type="text"
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                    placeholder="Ex: Almoço completo"
-                    required
-                  />
-                </div>
-
-                {/* Tipo e Data */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Tipo de Refeição */}
                   <div>
                     <label htmlFor="type_id" className="block text-sm font-medium text-foreground mb-2">
-                      Tipo de Refeição
+                      Tipo de Refeição *
                     </label>
                     <select
                       id="type_id"
                       value={formData.type_id}
                       onChange={(e) => handleInputChange('type_id', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       required
                     >
                       <option value={0}>Selecione o tipo</option>
@@ -325,133 +314,148 @@ export default function EditMealPage() {
                     </select>
                   </div>
 
+                  {/* Data e Hora */}
                   <div>
                     <label htmlFor="date_time" className="block text-sm font-medium text-foreground mb-2">
-                      Data e Hora
+                      Data e Hora *
                     </label>
                     <input
                       type="datetime-local"
                       id="date_time"
                       value={formData.date_time}
                       onChange={(e) => handleInputChange('date_time', e.target.value)}
-                      className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       required
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Itens da Refeição */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="block text-sm font-medium text-foreground">
-                      Itens da Refeição
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addItem}
-                      className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                      + Adicionar Item
-                    </button>
-                  </div>
+              {/* Itens da Refeição */}
+              <div className="bg-card rounded-lg shadow p-6 border border-border">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    Itens da Refeição
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="w-full sm:w-auto px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors duration-200 font-medium"
+                  >
+                    + Adicionar Item
+                  </button>
+                </div>
 
-                  <div className="space-y-4">
-                    {formData.items.map((item, index) => (
-                      <div key={index} className="flex flex-col sm:flex-row gap-3 p-4 border border-border rounded-lg bg-muted/30">
-                        <div className="flex-1">
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Nome do Item
-                          </label>
-                          <input
-                            type="text"
-                            value={item.item_name}
-                            onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                            className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                            placeholder="Ex: Arroz"
-                            required
-                          />
-                        </div>
+                <div className="space-y-4">
+                  {formData.items.map((item, index) => (
+                    <div key={index} className="p-4 bg-muted/30 rounded-lg space-y-4">
+                      {/* Nome do Item */}
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
+                          Nome do Item *
+                        </label>
+                        <input
+                          type="text"
+                          value={item.item_name}
+                          onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="Ex: Massa da panqueca"
+                          required
+                        />
+                      </div>
 
-                        <div className="w-24 sm:w-20">
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Quantidade
+                      {/* Quantidade e Unidade em linha no mobile */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Quantidade */}
+                        <div>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            Quantidade *
                           </label>
                           <input
                             type="number"
-                            step="0.1"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
-                            className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                            placeholder="0"
+                            className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            min="0"
+                            step="0.1"
                             required
                           />
                         </div>
 
-                        <div className="w-32 sm:w-28">
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Unidade
+                        {/* Unidade */}
+                        <div>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            Unidade *
                           </label>
                           <select
                             value={item.unit_id}
                             onChange={(e) => handleItemChange(index, 'unit_id', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-input bg-input rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             required
                           >
-                            <option value={0}>Selecione</option>
+                            <option value={0}>Selecione a unidade</option>
                             {units.map((unit) => (
                               <option key={unit.id} value={unit.id}>
-                                {unit.abbreviation || unit.name}
+                                {unit.abbreviation} - {unit.name}
                               </option>
                             ))}
                           </select>
                         </div>
-
-                        {formData.items.length > 1 && (
-                          <div className="flex items-end">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(index)}
-                              className="px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                              title="Remover item"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Mensagens de Feedback */}
-                {message && (
-                  <div className={`p-4 rounded-md border ${message.type === 'success'
-                    ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300'
-                    : 'bg-destructive/10 border-destructive/20 text-destructive dark:text-destructive'
-                    }`}>
-                    {message.text}
-                  </div>
-                )}
-
-                {/* Botões */}
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => router.push('/dashboard')}
-                    className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                  </button>
+                      {/* Botão Remover */}
+                      {formData.items.length > 1 && (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors duration-200 border border-destructive/20"
+                            title="Remover item"
+                          >
+                            ✕ Remover Item
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </form>
-            </div>
+              </div>
+
+              {/* Mensagens de Erro e Sucesso */}
+              {message && (
+                <div className={`p-4 rounded-md border ${message.type === 'success'
+                  ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300'
+                  : 'bg-destructive/10 border-destructive/20 text-destructive dark:text-destructive'
+                  }`}>
+                  {message.text}
+                </div>
+              )}
+
+              {/* Botões de Ação */}
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => router.push('/dashboard')}
+                  className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Salvando...
+                    </div>
+                  ) : (
+                    'Salvar Alterações'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </main>
 
