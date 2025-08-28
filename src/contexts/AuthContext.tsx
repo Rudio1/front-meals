@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from './ThemeContext';
@@ -22,7 +22,6 @@ interface AuthContextType {
   login: (userData: User, tokens?: { access_token: string; refresh_token: string; expires_in: number }) => void;
   updateUser: (userData: Partial<User>) => void;
   logout: () => void;
-  checkAuth: () => void;
   refreshToken: () => Promise<void>;
 }
 
@@ -37,47 +36,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken, , isAccessTokenLoaded] = useLocalStorage<string | null>('access_token', null);
   const [storedRefreshToken, setStoredRefreshToken, , isRefreshTokenLoaded] = useLocalStorage<string | null>('refresh_token', null);
   const [tokenExpires, setTokenExpires, , isTokenExpiresLoaded] = useLocalStorage<string | null>('token_expires', null);
+  
+  // Usar refs para evitar dependências circulares
+  const setUserRef = useRef(setUser);
+  const setThemeRef = useRef(setTheme);
+  const setAccessTokenRef = useRef(setAccessToken);
+  const setStoredRefreshTokenRef = useRef(setStoredRefreshToken);
+  const setTokenExpiresRef = useRef(setTokenExpires);
+  const routerRef = useRef(router);
 
-  const login = (userData: User, tokens?: { access_token: string; refresh_token: string; expires_in: number }) => {
-    setUser(userData);
+  const login = useCallback((userData: User, tokens?: { access_token: string; refresh_token: string; expires_in: number }) => {
+    setUserRef.current(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     
-    // Aplicar tema do usuário
     if (userData.themeSelected) {
-      setTheme(userData.themeSelected as 'light' | 'dark');
+      setThemeRef.current(userData.themeSelected as 'light' | 'dark');
     }
     
-    // Salva os tokens se fornecidos
     if (tokens) {
-      setAccessToken(tokens.access_token);
-      setStoredRefreshToken(tokens.refresh_token);
-      setTokenExpires((Date.now() + (tokens.expires_in * 1000)).toString());
+      setAccessTokenRef.current(tokens.access_token);
+      setStoredRefreshTokenRef.current(tokens.refresh_token);
+      setTokenExpiresRef.current((Date.now() + (tokens.expires_in * 1000)).toString());
     }
-  };
+  }, []);
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = useCallback((userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
+      setUserRef.current(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      // Sincronizar tema se foi alterado
       if (userData.themeSelected) {
-        setTheme(userData.themeSelected as 'light' | 'dark');
+        setThemeRef.current(userData.themeSelected as 'light' | 'dark');
       }
     }
-  };
+  }, [user]);
 
-  const logout = () => {
-    setUser(null);
+  const logout = useCallback(() => {
+    setUserRef.current(null);
     localStorage.removeItem('user');
-    setAccessToken(null);
-    setStoredRefreshToken(null);
-    setTokenExpires(null);
-    router.push('/login');
-  };
+    setAccessTokenRef.current(null);
+    setStoredRefreshTokenRef.current(null);
+    setTokenExpiresRef.current(null);
+    routerRef.current.push('/login');
+  }, []);
 
-  const refreshToken = async () => {
+  const refreshToken = useCallback(async () => {
     if (!storedRefreshToken) {
       logout();
       return;
@@ -94,13 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setAccessToken(data.tokens.access_token);
-        setStoredRefreshToken(data.tokens.refresh_token);
-        setTokenExpires((Date.now() + (data.tokens.expires_in * 1000)).toString());
+        setAccessTokenRef.current(data.tokens.access_token);
+        setStoredRefreshTokenRef.current(data.tokens.refresh_token);
+        setTokenExpiresRef.current((Date.now() + (data.tokens.expires_in * 1000)).toString());
         
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          setUserRef.current(JSON.parse(storedUser));
         }
       } else {
         logout();
@@ -109,37 +113,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Erro ao renovar token:', error);
       logout();
     }
-  };
+  }, [storedRefreshToken]);
 
-  const checkAuth = () => {
 
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedUser && accessToken && tokenExpires) {
-      const expiresAt = parseInt(tokenExpires);
-      if (Date.now() < expiresAt) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        
-        // Aplicar tema salvo
-        if (userData.themeSelected) {
-          setTheme(userData.themeSelected as 'light' | 'dark');
-        }
-      } else {
-        refreshToken();
-      }
-    } else {
-      setUser(null);
-    }
-    setIsLoading(false);
-  };
 
   useEffect(() => {
-    // Só executa checkAuth quando todos os valores do localStorage foram carregados
+    // Só executa quando todos os valores do localStorage foram carregados
     if (isAccessTokenLoaded && isRefreshTokenLoaded && isTokenExpiresLoaded) {
-      checkAuth();
+      // Verificar autenticação diretamente aqui para evitar dependências circulares
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser && accessToken && tokenExpires) {
+        const expiresAt = parseInt(tokenExpires);
+        if (Date.now() < expiresAt) {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          
+          if (userData.themeSelected) {
+            setTheme(userData.themeSelected as 'light' | 'dark');
+          }
+        } else {
+          refreshToken();
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
     }
-  }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires, checkAuth]);
+  }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires, refreshToken]);
 
   const value = {
     user,
@@ -149,7 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     updateUser,
     logout,
-    checkAuth,
     refreshToken,
   };
 
