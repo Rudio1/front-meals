@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -35,6 +37,39 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchFilteredData = async (date: string) => {
+    try {
+      setIsFiltering(true);
+      setError(null);
+      
+      const response = await fetch(`/api/meals/filter-by-date?date=${date}`);
+      if (!response.ok) {
+        throw new Error('Erro ao filtrar dados por data');
+      }
+      
+      const data: DashboardData = await response.json();
+      setDashboardData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    if (date) {
+      fetchFilteredData(date);
+    } else {
+      fetchDashboardData();
+    }
+  };
+
+  const resetFilter = () => {
+    setSelectedDate('');
+    fetchDashboardData();
   };
 
   const organizarPorUsuario = (): UsuarioRefeicoes[] => {
@@ -103,19 +138,12 @@ export default function DashboardPage() {
                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                  <div>
                    <h2 className="text-3xl font-bold text-foreground mb-2">Dashboard</h2>
-                   <p className="text-muted-foreground">Refeições registradas</p>
-                 </div>
-                 <div className="mt-4 sm:mt-0">
-                   <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-                     <p className="text-sm font-medium text-primary">
-                       📅 {new Date().toLocaleDateString('pt-BR', { 
-                         weekday: 'long', 
-                         year: 'numeric', 
-                         month: 'long', 
-                         day: 'numeric' 
-                       })}
+                                        <p className="text-muted-foreground">
+                       {selectedDate 
+                         ? `Refeições registradas em ${selectedDate.split('-').reverse().join('/')}`
+                         : 'Refeições registradas'
+                       }
                      </p>
-                   </div>
                  </div>
                </div>
              </div>
@@ -154,20 +182,60 @@ export default function DashboardPage() {
             {!isLoading && !error && dashboardData && (
               <div className="space-y-6">
                 {/* Cards de Resumo */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                     <div className="bg-card rounded-lg shadow p-6 border border-border">
-                     <div className="flex items-center">
-                       <div className="flex-shrink-0">
-                         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                           <span className="text-primary-foreground text-lg">🍽️</span>
-                         </div>
-                       </div>
-                       <div className="ml-4">
-                         <p className="text-sm font-medium text-muted-foreground">Refeições de Hoje</p>
-                         <p className="text-2xl font-bold text-card-foreground">{dashboardData.total_refeicoes}</p>
-                       </div>
-                     </div>
-                   </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-card rounded-lg shadow p-6 border border-border">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                          <span className="text-primary-foreground text-lg">🍽️</span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                                                 <p className="text-sm font-medium text-muted-foreground">
+                           {selectedDate ? `Refeições de ${selectedDate.split('-').reverse().join('/')}` : 'Refeições de Hoje'}
+                         </p>
+                        <p className="text-2xl font-bold text-card-foreground">{dashboardData.total_refeicoes}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-card rounded-lg shadow p-6 border border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white text-lg">📅</span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-muted-foreground">Filtrar por Data</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => handleDateChange(e.target.value)}
+                          className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        {selectedDate && (
+                          <button
+                            onClick={resetFilter}
+                            className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors duration-200"
+                            title="Limpar filtro"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {isFiltering && (
+                      <div className="mt-3 flex items-center text-sm text-muted-foreground">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                        Filtrando...
+                      </div>
+                    )}
+                  </div>
 
                   {/* <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
@@ -246,11 +314,25 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </main>
+                                 </div>
+               </div>
+             )}
+
+             {/* Data atual na parte inferior */}
+             <div className="mt-8 flex justify-center">
+               <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+                 <p className="text-sm font-medium text-primary">
+                   📅 {new Date().toLocaleDateString('pt-BR', { 
+                     weekday: 'long', 
+                     year: 'numeric', 
+                     month: 'long', 
+                     day: 'numeric' 
+                   })}
+                 </p>
+               </div>
+             </div>
+           </div>
+         </main>
 
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
