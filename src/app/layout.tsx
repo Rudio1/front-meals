@@ -14,6 +14,11 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Sistema de Gestão de Refeições",
   description: "Sistema completo para gestão de refeições e controle nutricional",
+  icons: {
+    icon: '/favico.png',
+    shortcut: '/favico.png',
+    apple: '/favico.png',
+  },
 };
 
 export default function RootLayout({
@@ -23,15 +28,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-              <body
-          className={`${montserrat.variable} font-montserrat antialiased`}
-        >
-          <ThemeProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ThemeProvider>
-        </body>
+      <head>
+        <link rel="icon" type="image/png" href="/favico.png" />
+        <link rel="shortcut icon" type="image/png" href="/favico.png" />
+        <link rel="apple-touch-icon" type="image/png" href="/favico.png" />
+      </head>
+      <body
+        className={`${montserrat.variable} font-montserrat antialiased`}
+      >
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
