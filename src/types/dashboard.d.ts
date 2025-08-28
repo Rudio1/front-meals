@@ -2,7 +2,10 @@ export interface Refeicao {
   Usuario: string;
   Refeicao: string;
   Data: string;
-  Tipo: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
+  Tipo: 'Café da manhã' | 'Lanche da manhã' | 'Almoço' | 'Lanche da tarde' | 'Jantar' | 'Ceia' | 'Snack (Lanche rápido)';
+  NomeItem: string;
+  Quantidade: number;
+  Medida: string;
 }
 
 export interface DashboardData {
