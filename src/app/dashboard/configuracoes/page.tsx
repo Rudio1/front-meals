@@ -15,7 +15,7 @@ const AVAILABLE_THEMES = [
 ];
 
 export default function ConfiguracoesPage() {
-    const { user, logout, updateUser } = useAuth();
+    const { user, updateUser } = useAuth();
     const { theme, setTheme } = useTheme();
     const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

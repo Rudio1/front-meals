@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -300,7 +300,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Mobile View - Cards */}
                         <div className="block sm:hidden space-y-4">
-                          {Array.from(refeicoesAgrupadas.entries()).map(([chave, itens], index) => {
+                          {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
                             const primeiroItem = itens[0];
                             return (
                               <div key={index} className="bg-card border border-border rounded-lg p-4 space-y-3">
@@ -375,7 +375,7 @@ export default function DashboardPage() {
                               </tr>
                             </thead>
                             <tbody className="bg-card divide-y divide-border">
-                              {Array.from(refeicoesAgrupadas.entries()).map(([chave, itens], index) => {
+                              {Array.from(refeicoesAgrupadas.entries()).map(([, itens], index) => {
                                 const primeiroItem = itens[0];
                                 return (
                                   <tr key={index} className="hover:bg-accent">

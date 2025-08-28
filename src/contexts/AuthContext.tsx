@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTheme } from './ThemeContext';
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isAccessTokenLoaded && isRefreshTokenLoaded && isTokenExpiresLoaded) {
       checkAuth();
     }
-  }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires]);
+  }, [isAccessTokenLoaded, isRefreshTokenLoaded, isTokenExpiresLoaded, accessToken, tokenExpires, checkAuth]);
 
   const value = {
     user,
