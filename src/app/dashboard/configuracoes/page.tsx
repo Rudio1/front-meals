@@ -12,6 +12,7 @@ import Sidebar from '@/components/Sidebar';
 const AVAILABLE_THEMES = [
     { id: 'light', name: 'Claro', icon: '☀️' },
     { id: 'dark', name: 'Escuro', icon: '🌙' },
+    { id: 'rosa', name: 'Rosa', icon: '🌸' },
 ];
 
 export default function ConfiguracoesPage() {
@@ -72,7 +73,7 @@ export default function ConfiguracoesPage() {
                     text: 'Configurações atualizadas com sucesso!'
                 });
 
-                setTheme(formData.themeSelected as 'light' | 'dark');
+                setTheme(formData.themeSelected as 'light' | 'dark' | 'rosa');
 
                 updateUser({
                     name: formData.name,

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark' | 'rosa';
 
 interface ThemeContextType {
   theme: Theme;
@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Carregar tema do localStorage ou usar padrão
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'rosa')) {
       setThemeState(savedTheme);
     }
   }, []);
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     
     // Remover classes anteriores
-    root.classList.remove('light', 'dark');
+    root.classList.remove('light', 'dark', 'rosa');
     
     // Adicionar nova classe
     root.classList.add(theme);
@@ -42,7 +42,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleTheme = () => {
-    setThemeState(prev => prev === 'light' ? 'dark' : 'light');
+    // Ciclo: light -> dark -> rosa -> light
+    if (theme === 'light') setThemeState('dark');
+    else if (theme === 'dark') setThemeState('rosa');
+    else setThemeState('light');
   };
 
   const value = {

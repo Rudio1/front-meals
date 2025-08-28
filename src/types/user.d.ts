@@ -1,12 +1,12 @@
 export interface UserSettings {
   name: string;
-  themeSelected: string;
+  themeSelected: 'light' | 'dark' | 'rosa';
 }
 
 export interface EditUserRequest {
   user_id: number;
   name: string;
-  themeSelected: string;
+  themeSelected: 'light' | 'dark' | 'rosa';
 }
 
 export interface EditUserResponse {
@@ -15,6 +15,6 @@ export interface EditUserResponse {
     id: number;
     name: string;
     email: string;
-    themeSelected: string;
+    themeSelected: 'light' | 'dark' | 'rosa';
   };
 }

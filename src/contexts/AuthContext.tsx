@@ -9,7 +9,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  themeSelected?: string;
+  themeSelected?: 'light' | 'dark' | 'rosa';
   created_at?: string;
   updated_at?: string;
 }
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
     
     if (userData.themeSelected) {
-      setThemeRef.current(userData.themeSelected as 'light' | 'dark');
+      setThemeRef.current(userData.themeSelected as 'light' | 'dark' | 'rosa');
     }
     
     if (tokens) {
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       if (userData.themeSelected) {
-        setThemeRef.current(userData.themeSelected as 'light' | 'dark');
+        setThemeRef.current(userData.themeSelected as 'light' | 'dark' | 'rosa');
       }
     }
   }, [user]);
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(userData);
           
           if (userData.themeSelected) {
-            setTheme(userData.themeSelected as 'light' | 'dark');
+            setTheme(userData.themeSelected as 'light' | 'dark' | 'rosa');
           }
         } else {
           refreshToken();
