@@ -198,7 +198,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="bg-card rounded-lg shadow p-4 sm:p-6 border border-border">
+                  <div
+                    className="bg-card rounded-lg shadow p-4 sm:p-6 border border-border cursor-pointer sm:cursor-default"
+                    onClick={(e) => {
+                      // No mobile, clicar em qualquer lugar do container abre o calendário
+                      if (window.innerWidth < 640) {
+                        e.preventDefault();
+                        const dateInput = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement;
+                        if (dateInput) {
+                          dateInput.showPicker?.();
+                        }
+                      }
+                    }}
+                  >
                     <div className="space-y-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -216,27 +228,15 @@ export default function DashboardPage() {
                             type="date"
                             value={selectedDate}
                             onChange={(e) => handleDateChange(e.target.value)}
-                            className="w-full sm:w-auto px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
-                            onClick={(e) => {
-                              // No mobile, abre o calendário automaticamente
-                              if (window.innerWidth < 640) {
-                                e.currentTarget.showPicker?.();
-                              }
-                            }}
-                          />
-                          {/* Overlay para mobile que abre o calendário */}
-                          <div
-                            className="absolute inset-0 sm:hidden cursor-pointer"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                              input.showPicker?.();
-                            }}
+                            className="w-full sm:w-auto px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </div>
                         {selectedDate && (
                           <button
-                            onClick={resetFilter}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              resetFilter();
+                            }}
                             className="w-full sm:w-auto px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors duration-200"
                             title="Limpar filtro"
                           >
@@ -311,13 +311,13 @@ export default function DashboardPage() {
                                     </h4>
                                     <div className="flex items-center space-x-2 mb-2">
                                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
-                                          primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
-                                            primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
-                                              primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                                                primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
-                                                  primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
-                                                    primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
-                                                      'bg-gray-500/10 text-gray-700 dark:text-gray-300'
+                                        primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
+                                          primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
+                                            primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
+                                              primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
+                                                primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
+                                                  primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
+                                                    'bg-gray-500/10 text-gray-700 dark:text-gray-300'
                                         }`}>
                                         {primeiroItem.Tipo === 'Café da manhã' ? '☀️ Café da manhã' :
                                           primeiroItem.Tipo === 'Lanche da manhã' ? '🌅 Lanche da manhã' :
@@ -384,13 +384,13 @@ export default function DashboardPage() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${primeiroItem.Tipo === 'Café da manhã' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' :
-                                          primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
-                                            primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
-                                              primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                                                primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
-                                                  primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
-                                                    primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
-                                                      'bg-gray-500/10 text-gray-700 dark:text-gray-300'
+                                        primeiroItem.Tipo === 'Lanche da manhã' ? 'bg-yellow-500/10 text-yellow-700 dark:text-blue-300' :
+                                          primeiroItem.Tipo === 'Almoço' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
+                                            primeiroItem.Tipo === 'Lanche da tarde' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
+                                              primeiroItem.Tipo === 'Jantar' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' :
+                                                primeiroItem.Tipo === 'Ceia' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
+                                                  primeiroItem.Tipo === 'Snack (Lanche rápido)' ? 'bg-pink-500/10 text-pink-700 dark:text-pink-300' :
+                                                    'bg-gray-500/10 text-gray-700 dark:text-gray-300'
                                         }`}>
                                         {primeiroItem.Tipo === 'Café da manhã' ? 'Café da manhã' :
                                           primeiroItem.Tipo === 'Lanche da manhã' ? 'Lanche da manhã' :
